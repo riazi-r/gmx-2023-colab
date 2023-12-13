@@ -1,7 +1,7 @@
 gmx grompp -f min.mdp -c boxedsoln.gro -p topol.top -r boxedsoln.gro -o em.tpr &&
 gmx mdrun -deffnm em &&
 
-gmx grompp -f nvt.mdp 1-c em.gro -p topol.top -r em.gro -o nvt.tpr &&
+gmx grompp -f nvt.mdp -c em.gro -p topol.top -r em.gro -o nvt.tpr &&
 gmx mdrun -deffnm nvt -update gpu -nb gpu -pme gpu -bonded gpu && sleep 2 &&
 
 gmx grompp -f npt.mdp -c nvt.gro -p topol.top -r nvt.gro -t nvt.cpt -o npt.tpr &&
