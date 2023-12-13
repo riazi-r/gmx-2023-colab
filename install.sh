@@ -1,4 +1,4 @@
-tar xfz gromacs-2022.tar.gz &&
+tar xfz gromacs-2023.3.tar.gz &&
 cd gromacs-2022
 mkdir build
 cd build
