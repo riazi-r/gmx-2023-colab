@@ -1,0 +1,46 @@
+gmx editconf -f solute.gro -o boxed.gro -center 22.5 12.5 10 -box 45 15 20 
+
+gmx solvate -cp boxed.gro -cs spc216.gro -o boxedsol.gro -p topol.top
+
+add below line to topol.top under other #Include forcefield parameters
+#include "toppar/tip3p.itp"
+
+copy tip3p.itp to toppar folder
+
+if solute topology is generated via charmm-gui FFconvertor with no solvent, add below lines to the end of [atomtypes] section in forcefield.itp in toppar folder for tip3 solvent LJ parameters:
+      HT     1     1.0080      0.417     A    4.00013524445e-02    1.924640e-01 
+      OT     8    15.9994     -0.834     A    3.15057422683e-01    6.363864e-01
+	  
+gmx grompp -f ions.mdp -c boxedsol.gro -p topol.top -o ions.tpr
+gmx genion -s ions.tpr -o boxedsoln.gro -p topol.top -pname NA -nname CL -neutral -conc 0.15  
+
+add  below lines to topol.top under other #included parameters:
+#include "toppar/NA.itp"
+#include "toppar/CL.itp"
+copy "NA.itp" & "CL.itp" to toppar folder
+
+add following lines to the end of forcefield.itp:
+#include "charmm36-CL.itp"
+#include "charmm36-NA.itp"
+copy "charmm36-NA.itp" & "charmm36-CL.itp" files to toppar folder
+
+
+
+gmx make_ndx -f boxedsoln.gro -o awh
+a 1-5918 
+name 17 left
+a 5919-11836
+name 18 right
+q
+
+change "posres" to "posres_left" in the itp file of the left peptide , under "#ifdef posres" section for independent restraining of left group
+change define argument at the beginning of awh.mdp from "DPOSRES" to "DPOSRES_LEFT"
+keep "-DDIHRES" in place in both peptides itp files and in awh.mdp to maintain general shape of both of them
+
+modify pbc atom indices for 2 groups of pull code
+modify direction vector for pull code
+modify AWH boundary range
+modify AWH force-constant
+modify AWH diffusion coeffcient, if necessary (HIGHER,BETTER)
+
+
