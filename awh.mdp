@@ -1,0 +1,71 @@
+title                    = AWH simulation 
+define                  = -DPOSRES_left -DPOSRES_FC_BB=400.0 -DPOSRES_FC_SC=40.0 ; -DDIHRES -DDIHRES_FC=4.0
+integrator               = md
+dt                       = 0.002
+nsteps                   = 20000000
+
+nstlog                   = 200000
+nstenergy                = 50000
+nstxout-compressed       = 10000
+
+; Settings that make sure we run with parameters in harmony with the selected force-field
+coulombtype              = pme
+rcoulomb                 = 1.0
+;fourierspacing           = 0.121 ; grid spacing for FFT
+;
+vdwtype                  = cut-off
+vdw-modifier             = potential-shift-verlet
+rvdw                     = 1.0
+dispCorr                 = enerpres
+constraints              = h-bonds
+continuation             = yes
+pbc                      = xyz
+
+; Pressure coupling is on
+pcoupl                   = C-rescale 
+pcoupl-type              = isotropic  ; isotropic in the x , y and z direction  
+tau_p                    = 5.0 
+ref_p                    = 1.0
+compressibility          = 4.5e-5 ; 4.5e-5 
+refcoord-scaling         = all
+
+; Keep system temperature fluctuating physically correct
+tcoupl                   = v-rescale 
+tc-grps                  = system
+tau_t                    = 0.5 
+ref_t                    = 310 
+
+gen-vel                  = no
+gen-temp                 = 310
+gen-seed                 = 12345
+
+
+;periodic-molecules       = yes              ; for systems with molecules that couple to themselves through the periodic boundary conditions, this requires a slower PBC algorithm and molecules are not made whole in the output.
+
+pull                     = yes                 ; The reaction coordinate (RC) is defined using pull coordinates.
+pull-ngroups             = 2                   ; The number of atom groups needed to define the pull coordinate.
+pull-ncoords             = 1                   ; Number of pull coordinates.
+pull-nstxout             = 5000                ; Step interval to output the coordinate values to the pullx.xvg.
+pull-nstfout             = 5000                ; Step interval to output the applied force (skip here).					       
+pull-group1-name         = left                ; Name of pull group 1 corresponding to an entry in an index file.
+pull-group2-name         = right               ; Same, but for group 2.				       
+pull-coord1-groups       = 1 2                 ; Which groups define coordinate 1? Here, groups 1 and 2.
+pull-coord1-geometry     = direction        ; How is the coordinate defined? Here by the COM distance.
+pull-coord1-vec          = -221.5 30.8 22
+pull-coord1-dim          = Y Y Y
+pull-coord1-type         = external-potential  ; Apply the bias using an external module.
+pull-coord1-potential-provider = AWH           ; The external module is called AWH!
+pull_coord1_start       = yes                  ;
+pull-group1-pbcatom     = 4667
+pull-group2-pbcatom     = 6387
+pull-pbc-ref-prev-step-com = yes
+
+awh                      = yes                 ; AWH on.
+awh-nstout               = 50000               ; Step interval for writing awh*.xvg files.
+awh-nbias                = 1                   ; One bias, could have multiple.
+awh1-ndim                = 1                   ; Dimensionality of the RC, each dimension per pull coordinate.
+awh1-dim1-coord-index    = 1                   ; Map RC dimension to pull coordinate index (here 1-->1)
+awh1-dim1-start          = 18             ; Sampling interval min value (nm)
+awh1-dim1-end            = 23             ; Sampling interval max value (nm)
+awh1-dim1-force-constant = 50000             ; Force constant of the harmonic potential (kJ/(mol*nm^2))
+awh1-dim1-diffusion      = 5e-4                ; Estimate of the diffusion (nm^2/ps)
