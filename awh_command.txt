@@ -1,0 +1,3 @@
+gmx awh -f awh.edr -s awh-ext.tpr -o awh.xvg -fric fric.xvg
+        -b  [-e <time>] [-[no]w] [-xvg <enum>] [-skip <int>]
+        [-[no]more] [-[no]kt]
