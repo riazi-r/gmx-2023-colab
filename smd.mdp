@@ -5,7 +5,7 @@ integrator  = md
 dt          = 0.002
 tinit       = 0
 nsteps      = 500000    ; 500 ps
-nstcomm     = 10
+nstcomm     = 100
 ; Output parameters
 ;nstxout     = 2000      ; every 10 ps
 ;nstvout     = 2000 
@@ -35,14 +35,14 @@ pme_order       = 4
 ewald_rtol      = 1e-5
 optimize_fft    = yes
 ; Berendsen temperature coupling is on in two groups
-Tcoupl      = Nose-Hoover
+Tcoupl      = Nose-Hoover ; leapfrog does not yet support Nose-Hoover chains, nhchainlength has to be 1
 tc_grps     = Protein   Non-Protein 
 tau_t       = 1.0       1.0
 ref_t       = 310       310
 ; Pressure coupling is on
-Pcoupl          = Parrinello-Rahman 
+Pcoupl          = C-rescale;   Parrinello-Rahman is not recommended with position restraints 
 pcoupltype      = isotropic
-tau_p           = 1.0       
+tau_p           = 5.0       
 compressibility = 4.5e-5
 ref_p           = 1.0
 refcoord_scaling = com
