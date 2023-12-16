@@ -17,5 +17,5 @@ gmx mdrun -deffnm awh -update gpu -nb gpu -pme gpu -pf pullf.xvg -px pullx.xvg -
 gmx mdrun -s awh-ext.tpr -deffnm awh -cpi awh.cpt -px pullx.xvg -pf pullf.xvg || sleep 6
 done 
   
-#gmx grompp -f md_pull.mdp -c npt.gro -p topol.top -r npt.gro -n index.ndx -t npt.cpt -o pull.tpr
-#gmx mdrun -deffnm pull -pf pullf.xvg -px pullx.xvg
+#gmx grompp -f smd.mdp -c npt.gro -p topol.top -r npt.gro -n awh.ndx -t npt.cpt -o smd.tpr
+#gmx mdrun -deffnm smd -pf pullf.xvg -px pullx.xvg
