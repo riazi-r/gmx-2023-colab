@@ -1,0 +1,46 @@
+cmake -GNinja -S. -B./build -DGMX_GPU=off -DGMX_FFT_LIBRARY=fftw3 -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=off -DFFTWF_INCLUDE_DIR="E:\Rooz\fftw" -DFFTWF_LIBRARY="E:\Rooz\fftw/libfftw3f-3.lib" -DCMAKE_INSTALL_PREFEIX="E:\Rooz\Gromacs2-bin"
+cmake --build . --target INSTALL --config Release
+gmx make_ndx -f emnc.gro -o index2.NDX
+gmx grompp -f equr.mdp -c emnc.gro -r emnc.gro -p topol.top -n index2.ndx -o equrNI.tpr
+gmx editconf -f step4_input_rotated3.gro -o newbox3.gro -bt cubic -d 10.0
+gmx pdb2gmx -f step4_input_rotated.pdb -o step4_input_rotated.gro -ter
+gmx mdrun -v -deffnm equrNI
+gmx convert-tpr -s equrnc.tpr -extend 6000 -o equrnccont.tpr
+gmx check -s1 equrnc.tpr -s2 equrnccont.tpr
+gmx mdrun -s equrnccont.tpr -cpi equrnc.cpt -v -px equrnc_pullx -pf equrnc_pullf -deffnm equrnc
+gmx mdrun -s equrncnpt.tpr -cpi equrnc.cpt v -px equrnc_pullx -pf equrnc_pullf -deffnm equrnc
+gmx trjconv -s equrNI.tpr -f equrNI.xtc -o conf.gro -sep
+
+
+::cgtools::sasa_LJ_networking 0 cg.par 0 cgupdate.par 200.0 5.0
+set all [atomselect top all]
+eval "vecadd [$all get charge]"
+set com [measure center [atomselect top all] weight mass]
+set x1 [lindex $com 0]
+set minmax [measure minmax $all]
+$a set occupancy 1
+$a set beta 0
+$all writepdb beta2.ref
+package require solvate
+solvate solute.psf solute.pdb -t 15 -o solution
+or
+solvate solute.psf solute.pdb -x 15 +x 15 -y 15 +y 15 -z 15 +z 15  -o solution
+
+set mw2 [measure sumweights $beta weight mass]
+set ch1 [eval "vecadd [$gama get charge]"]
+
+set a [measure center [atomselect top "segid WT1"]]
+set b [measure center [atomselect top "segid WT2"]]
+veclength [set diff [vecsub $a $b]]
+
+set all [atomselect top all]
+$all moveby {0 0 -20}
+
+
+
+set sel [atomselect top "segname PAA1 PAB1 PAC1 PAD1 PAE1 PAF1 HAA1 HAB1 HAC1 HAD1"]
+set com [measure center $sel weight mass]
+set matrix [transaxis x +90]
+$sel moveby [vecscale -1.0 $com]
+$sel move $matrix
+$sel moveby $com
