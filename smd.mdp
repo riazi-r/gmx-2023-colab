@@ -4,7 +4,7 @@ define                  = -DPOSRES_up -DPOSRES_FC_BB=400.0 -DPOSRES_FC_SC=40.0 ;
 integrator  = md
 dt          = 0.002
 tinit       = 0
-nsteps      = 500000    ; 500 ps
+nsteps      = 600000    ; 500 ps
 nstcomm     = 100
 ; Output parameters
 ;nstxout     = 2000      ; every 10 ps
@@ -14,8 +14,8 @@ nstxtcout   = 500       ; every 1 ps
 nstenergy   = 500
 ; Bond parameters
 constraint_algorithm    = lincs
-constraints             = all-bonds
-continuation            = yes       ; continuing from NPT 
+constraints             = h-bonds
+continuation            = no      ; continuing from NPT is only possible if for every independent smd simulation there is a separate cpt file from previous NPT simulation
 ; Single-range cutoff scheme
 cutoff-scheme   = Verlet
 vdwtype                  = cut-off
@@ -35,19 +35,23 @@ pme_order       = 4
 ewald_rtol      = 1e-5
 optimize_fft    = yes
 ; Berendsen temperature coupling is on in two groups
-Tcoupl      = Nose-Hoover ; leapfrog does not yet support Nose-Hoover chains, nhchainlength has to be 1
+Tcoupl      = v-rescale; Nose-Hoover is not supported with -update gpu option as per mdrun comment
 tc_grps     = Protein   Non-Protein 
 tau_t       = 1.0       1.0
 ref_t       = 310       310
 ; Pressure coupling is on
-Pcoupl          = C-rescale;   Parrinello-Rahman is not recommended with position restraints 
-pcoupltype      = isotropic
-tau_p           = 5.0       
-compressibility = 4.5e-5
-ref_p           = 1.0
-refcoord_scaling = com
+;Pcoupl          = C-rescale; Parrinello-Rahman is nor compatible with constraints as per grompp comment 
+;pcoupltype      = isotropic
+;tau_p           = 5.0       
+;compressibility = 4.5e-5
+;ref_p           = 1.0
+;refcoord_scaling = com
+
 ; Generate velocities is off
-gen_vel     = no 
+gen_vel     = yes
+gen-temp    = 310
+gen-seed    = -1 
+
 ; Periodic boundary conditions are on in all directions
 pbc     = xyz
 ; Long-range dispersion correction
@@ -57,7 +61,7 @@ DispCorr    = EnerPres
 
 pull                     = yes                 ; The reaction coordinate (RC) is defined using pull coordinates.
 pull-coord1-type         = umbrella            ; harmonic potential
-pull-coord1-geometry     = direction           ; How is the coordinate defined? Here by the COM distance at the specified direction 
+pull-coord1-geometry     = direction-periodic  ; How is the coordinate defined? Here by the COM distance at the specified direction and no periodic modification 
 pull-coord1-vec          = -37.3 23.2 22.8
 pull-coord1-dim          = Y Y Y
 pull-ngroups             = 2                   ; The number of atom groups needed to define the pull coordinate.
@@ -69,7 +73,7 @@ pull_coord1_start       =  yes                 ; define initial COM distance > 0
 pull-group1-pbcatom     =  1181
 pull-group2-pbcatom     =  3990
 pull-pbc-ref-prev-step-com = yes
-pull_coord1_rate        =  0.004              ; 0.008 nm per ps = 8 nm per ns (push)
+pull_coord1_rate        =  -0.004              ; 0.008 nm per ps = 8 nm per ns (push)
 pull_coord1_k           =  5000               ; kJ mol^-1 nm^-2
 pull-nstxout             = 100                ; Step interval to output the coordinate values to the pullx.xvg.
 pull-nstfout             = 100                ; Step interval to output the applied force (skip here).		
