@@ -14,7 +14,7 @@ for N in {0..10}
 do
 echo $N
 gmx mdrun -deffnm awh -update gpu -nb gpu -pme gpu -pf pullf.xvg -px pullx.xvg -cpi awh.cpt || sleep 6
-gmx mdrun -s awh-ext.tpr -deffnm awh -cpi awh.cpt -px pullx.xvg -pf pullf.xvg || sleep 6
+#gmx mdrun -s awh-ext.tpr -deffnm awh -cpi awh.cpt -px pullx.xvg -pf pullf.xvg || sleep 6
 done 
   
 #gmx grompp -f smd.mdp -c npt.gro -p topol.top -r npt.gro -n awh.ndx -t npt.cpt -o smd.tpr
