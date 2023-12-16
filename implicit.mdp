@@ -1,0 +1,70 @@
+; Implicit solvent simulation
+integrator       	= md
+tinit            	= 0       ; Starting time
+nsteps     	 	= 5000 ; 10ps
+dt               	= 0.002   ; 2fs
+comm-mode               = angular
+nstcomm			= 10
+comm-grps		= System
+ld-seed                 = -1
+
+; Electrostatic Parameters
+coulombtype      	= Cut-off
+rcoulomb	 	= 0
+
+; VDW parameters
+vdwtype		 	= Cut-off
+rvdw             	= 0
+
+; Temperature coupling
+tcoupl           	= v-rescale
+tc_grps          	= C2E6
+tau_t            	= 1.1
+ref_t            	= 300
+
+
+; Pressure coupling
+Pcoupl           	=  no
+
+; Output parameters
+nstxout			= 0			; not write coordinate to trr
+nstvout			= 0			; not write velocity to trr
+nstfout			= 0			; not write force to trr
+nstlog          	= 1000		; frequency to write energies to log file
+nstenergy		= 1000		; frequency to write energies to energy file
+nstxtcout		= 100		; frequency to write coordinates to xtc trajectory
+xtc_precision		= 100		; precision to write to xtc trajectory
+xtc_grps		= System	; groups to write to xtc file
+energygrps		= System	; groups to write to energy file
+
+
+; Neighbour Searching parameters
+pbc              	= no
+nstlist		 	= 0
+ns_type          	= simple
+rlist	         	= 0
+
+; implicit solvent parameters
+implicit_solvent      	= GBSA
+gb_algorithm          	= OBC
+nstgbradii            	= 1
+gb_epsilon_solvent    	= 80
+gb_dielectric_offset  	= 0.009
+rgbradii  	      	= 0  ; Must be equal to rlist
+gb_saltconc           	= 0  ; Salt Concentration
+gb_obc_alpha          	= 1
+gb_obc_beta           	= 0.8
+gb_obc_gamma          	= 4.85
+sa_algorithm          	= Ace-approximation
+sa_surface_tension    	= 2.25936
+; velocity generation
+gen_vel          	= yes
+gen_temp         	= 300
+gen_seed         	= -1
+continuation  		= yes
+
+; Bond-parameters
+constraints          	= all-bonds
+constraint-algorithm 	= lincs
+lincs-order          	= 4
+lincs-iter           	= 1
