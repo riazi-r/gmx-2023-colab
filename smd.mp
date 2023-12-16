@@ -1,0 +1,75 @@
+title                    = smd pulling simulation 
+define                  = -DPOSRES_up -DPOSRES_FC_BB=400.0 -DPOSRES_FC_SC=40.0 ; -DDIHRES -DDIHRES_FC=4.0
+; Run parameters
+integrator  = md
+dt          = 0.002
+tinit       = 0
+nsteps      = 500000    ; 500 ps
+nstcomm     = 10
+; Output parameters
+;nstxout     = 2000      ; every 10 ps
+;nstvout     = 2000 
+;nstfout     = 500
+nstxtcout   = 500       ; every 1 ps
+nstenergy   = 500
+; Bond parameters
+constraint_algorithm    = lincs
+constraints             = all-bonds
+continuation            = yes       ; continuing from NPT 
+; Single-range cutoff scheme
+cutoff-scheme   = Verlet
+vdwtype                  = cut-off
+vdw-modifier             = potential-shift-verlet
+nstlist         = 20 
+ns_type         = grid 
+rlist           = 1
+rcoulomb        = 1
+rvdw            = 1
+; PME electrostatics parameters
+coulombtype     = PME
+fourierspacing  = 0.12
+fourier_nx      = 0
+fourier_ny      = 0
+fourier_nz      = 0
+pme_order       = 4
+ewald_rtol      = 1e-5
+optimize_fft    = yes
+; Berendsen temperature coupling is on in two groups
+Tcoupl      = Nose-Hoover
+tc_grps     = Protein   Non-Protein 
+tau_t       = 1.0       1.0
+ref_t       = 310       310
+; Pressure coupling is on
+Pcoupl          = Parrinello-Rahman 
+pcoupltype      = isotropic
+tau_p           = 1.0       
+compressibility = 4.5e-5
+ref_p           = 1.0
+refcoord_scaling = com
+; Generate velocities is off
+gen_vel     = no 
+; Periodic boundary conditions are on in all directions
+pbc     = xyz
+; Long-range dispersion correction
+DispCorr    = EnerPres
+
+; Pull code
+
+pull                     = yes                 ; The reaction coordinate (RC) is defined using pull coordinates.
+pull-coord1-type         = umbrella            ; harmonic potential
+pull-coord1-geometry     = direction           ; How is the coordinate defined? Here by the COM distance at the specified direction 
+pull-coord1-vec          = -37.3 23.2 22.8
+pull-coord1-dim          = Y Y Y
+pull-ngroups             = 2                   ; The number of atom groups needed to define the pull coordinate.
+pull-ncoords             = 1                   ; Number of pull coordinates.			       
+pull-group1-name         = down                ; Name of pull group 1 corresponding to an entry in an index file.
+pull-group2-name         = up                  ; Same, but for group 2.				       
+pull-coord1-groups       = 1 2                 ; Which groups define coordinate 1? Here, groups 1 and 2.
+pull_coord1_start       =  yes                 ; define initial COM distance > 0
+pull-group1-pbcatom     =  1181
+pull-group2-pbcatom     =  3990
+pull-pbc-ref-prev-step-com = yes
+pull_coord1_rate        =  0.004              ; 0.008 nm per ps = 8 nm per ns (push)
+pull_coord1_k           =  5000               ; kJ mol^-1 nm^-2
+pull-nstxout             = 100                ; Step interval to output the coordinate values to the pullx.xvg.
+pull-nstfout             = 100                ; Step interval to output the applied force (skip here).		
