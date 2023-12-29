@@ -1,3 +1,11 @@
+gmx grompp -f min.mdp -c boxedsoln.gro -p topol.top -r boxedsoln.gro -o em.tpr &&
+gmx mdrun -deffnm em &&
+
+#gmx grompp -f nvt.mdp -c em3.gro -p topol.top -r em.gro -o nvt.tpr &&
+#gmx mdrun -deffnm nvt -update gpu -nb gpu -pme gpu -bonded gpu && sleep 2 &&
+
+gmx grompp -f npt.mdp -c em.gro -p topol.top -r em.gro -o npt.tpr &&
+gmx mdrun -deffnm npt -update gpu -nb gpu -pme gpu && sleep 10 &&
 echo 0 | gmx trjconv -s npt.tpr -f npt.xtc -o npt.gro -sep -skip 3
 
 for i in {0..16}
