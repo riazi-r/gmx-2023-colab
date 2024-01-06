@@ -123,7 +123,7 @@ do
   #gmx mdrun -deffnm nvt -update gpu -nb gpu -pme gpu && sleep 2 &&
 
   gmx grompp -f npt.mdp -c min.gro -p topol.top -r min.gro -o npt.tpr && #-t nvt.cpt
-  gmx mdrun -deffnm npt -update gpu -nb gpu -pme gpu && sleep 6 &&
+  gmx mdrun -deffnm npt -update gpu -nb gpu -pme gpu -cpi npt.cpt && sleep 6 &&
 
   echo 0 | gmx trjconv -s npt.tpr -f npt.xtc -o npt.gro -sep -skip 5
 
