@@ -3,17 +3,23 @@ method=smd
 for i in 1-1 
 #1-2 1-3 1-4 2-2 2-3 2-4 3-3 3-4 4-4
 do
-  
- #cd $pairs/$i
- #mv charmm-gui* charmm-gui
- #cd $pairs/$i/charmm-gui
- #vmd -e crdgenerator.tcl
- #vmd -e xplorpsf.tcl
- #line=$(head -1 solute.psf | awk '{print $NF}')
- #if [ line="CMAP" ]
- #then
- # sed -i '1 s/PSF EXT CMAP/PSF EXT CMAP XPLOR/' solute.psf 
- #fi
+ 
+ modification=no
+ if [[ "$modification" == "yes"]]
+ then
+ 
+  cd $pairs/$i
+  mv charmm-gui* charmm-gui
+  cd $pairs/$i/charmm-gui
+  vmd -e crdgenerator.tcl
+  vmd -e xplorpsf.tcl
+  line=$(head -1 solute.psf | awk '{print $NF}')
+   if [ line="CMAP" ]
+   then
+    sed -i '1 s/PSF EXT CMAP/PSF EXT CMAP XPLOR/' solute.psf 
+   fi
+   
+  fi 
  
  #After submitting the prepared psf & crd files to Charmm-Gui FF convertor and downloading the topology & structure files:
  cd $pairs/$i/Run
@@ -95,7 +101,7 @@ do
   r=$(($n-1))
   sed -i '2i name '$l' left' list.txt
   sed -i '4i name '$r' right' list.txt
-  cat list.txt | gmx make_ndx -f boxedsoln.gro -o smd
+  cat list.txt | gmx make_ndx -f boxedsoln.gro -o ${method}
   
   # echo $l | gmx genrestr -f boxedsoln.gro -n index.ndx -o leftrest.itp
   
@@ -115,27 +121,79 @@ do
   atomindex2=$(awk '/centeratom_right/ {print $NF}' solute.info)
   sed -i 's/pull-group1-pbcatom     =/pull-group1-pbcatom     = '$atomindex1';/' $destination/$method.mdp
   sed -i 's/pull-group2-pbcatom     =/pull-group2-pbcatom     = '$atomindex2';/' $destination/$method.mdp
- 
-  gmx grompp -f min.mdp -c boxedsoln.gro -p topol.top -r boxedsoln.gro -o min.tpr &&
-  gmx mdrun -deffnm min &&
-
-  #gmx grompp -f nvt.mdp -c min.gro -p topol2.top -r min.gro -o nvt.tpr &&
-  #gmx mdrun -deffnm nvt -update gpu -nb gpu -pme gpu && sleep 2 &&
-
-  gmx grompp -f npt.mdp -c min.gro -p topol.top -r min.gro -o npt.tpr && #-t nvt.cpt
-  gmx mdrun -deffnm npt -update gpu -nb gpu -pme gpu -cpi npt.cpt && sleep 6 &&
-
-  echo 0 | gmx trjconv -s npt.tpr -f npt.xtc -o npt.gro -sep -skip 5
-
-  for i in {0..3}
-  do
-   gmx grompp -f $method.mdp -c npt$i.gro -p topol.top -r npt$i.gro -n smd.ndx -o smd$i.tpr
-
-  echo $i
-
-  gmx mdrun -deffnm smd$i -pf pullf$i.xvg -px pullx$i.xvg -cpi smd$i.cpt -update gpu
-  done 
-
+  
+  
+    #fwd and back smd mdp settings (for smd only):
+	
+  if [[ "$method" == "smd" ]]
+  then 
+    cp $destination/$method.mdp $destination/${method}_back.mdp
+    mv $destination/$method.mdp $destination/${method}_fwd.mdp
+    dos2unix $destination/${method}_back.mdp
+    dos2unix $destination/${method}_forward.mdp
+    dt=$(awk '/dt/ {print $3}' ${method}_back.mdp)
+    rate=$(awk '/pull_coord1_rate/ {print $3}' ${method}_back.mdp)
+    initialdistance=$(awk '/COM distance:/ {print $3}' solute.info)
+    nearestdistance=20
+    traverse=$(printf %.1f $(echo "($initialdistance-$nearestdistance)/10" | bc -l))
+    steps=$(printf %.0f $(echo "($traverse/$rate)/$dt" | bc -l))
+    sed -i 's/nsteps      =/nsteps      = '$steps';/' $destination/${method}_back.mdp
+    rate_back=$(printf %.4f $(echo "$rate*-1" | bc -l))
+    sed -i 's/pull_coord1_rate        =/pull_coord1_rate        = '$rate_back';/' $destination/${method}_back.mdp
+	
+	gmx grompp -f min.mdp -c boxedsoln.gro -p topol.top -r boxedsoln.gro -o min.tpr &&
+    gmx mdrun -deffnm min &&
+    
+    #gmx grompp -f nvt.mdp -c min.gro -p topol2.top -r min.gro -o nvt.tpr &&
+    #gmx mdrun -deffnm nvt -update gpu -nb gpu -pme gpu && sleep 2 &&
+    
+    gmx grompp -f npt.mdp -c min.gro -p topol.top -r min.gro -o npt.tpr && #-t nvt.cpt
+    gmx mdrun -deffnm npt -update gpu -nb gpu -pme gpu -cpi npt.cpt && sleep 6 &&
+    
+    echo 0 | gmx trjconv -s npt.tpr -f npt.xtc -o npt.gro -sep -skip 5
+    
+    for i in {0..3}
+    do
+     
+	 gmx grompp -f ${method}_fwd.mdp -c npt$i.gro -p topol.top -r npt$i.gro -n ${method}.ndx -o ${method}_fwd$i.tpr
+     echo "$i forward"  
+     gmx mdrun -deffnm ${method}_fwd$i -pf pullf_fwd$i.xvg -px pullx_fwd$i.xvg -cpi ${method}_fwd$i.cpt -update gpu
+	 
+	 gmx grompp -f ${method}_back.mdp -c npt$i.gro -p topol.top -r npt$i.gro -n ${method}.ndx -o ${method}_back$i.tpr
+     echo "$i backward"  
+     gmx mdrun -deffnm ${method}_back$i -pf pullf_back$i.xvg -px pullx_back$i.xvg -cpi ${method}_back$i.cpt -update gpu
+	 
+	done 
+	 
+  fi
+  
+  #for AWH,ABF,FEP,etc.
+  
+  if [[ "$method" != "smd" ]]
+  then
+  
+    gmx grompp -f min.mdp -c boxedsoln.gro -p topol.top -r boxedsoln.gro -o min.tpr &&
+    gmx mdrun -deffnm min &&
+    
+    #gmx grompp -f nvt.mdp -c min.gro -p topol2.top -r min.gro -o nvt.tpr &&
+    #gmx mdrun -deffnm nvt -update gpu -nb gpu -pme gpu && sleep 2 &&
+    
+    gmx grompp -f npt.mdp -c min.gro -p topol.top -r min.gro -o npt.tpr && #-t nvt.cpt
+    gmx mdrun -deffnm npt -update gpu -nb gpu -pme gpu -cpi npt.cpt && sleep 6 &&
+    
+    echo 0 | gmx trjconv -s npt.tpr -f npt.xtc -o npt.gro -sep -skip 5
+    
+    for i in {0..3}
+    do
+	
+     gmx grompp -f ${method}.mdp -c npt$i.gro -p topol.top -r npt$i.gro -n ${method}.ndx -o ${method}$i.tpr
+     echo $i    
+     gmx mdrun -deffnm ${method}$i -pf pullf$i.xvg -px pullx$i.xvg -cpi ${method}$i.cpt -update gpu
+    
+	done 
+    
+  fi
+  
 done
  
  
