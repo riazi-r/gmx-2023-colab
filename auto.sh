@@ -62,6 +62,7 @@ do
   
   gmx solvate -cp boxed.gro -cs spc216.gro -o boxedsol.gro -p topol.top
  
+  sed -i 's/Title/'$i'/' $destination/topol.top 
   l=$(awk '/system/{print NR}' topol.top)
   line=$((l-1))
   sed -i ''$line'i #include "toppar/tip3p.itp"' topol.top
@@ -71,13 +72,13 @@ do
   line=$((l-1))
   sed -i ''$line'i\      HT     1     1.0080      0.417     A    4.00013524445e-02    1.924640e-01' $destination/toppar/forcefield.itp
   sed -i ''$l'i\      OT     8    15.9994     -0.834     A    3.15057422683e-01    6.363864e-01'  $destination/toppar/forcefield.itp
-  
+    
   gmx grompp -f ions.mdp -c boxedsol.gro -p topol.top -o ions.tpr
   echo SOL | gmx genion -s ions.tpr -o boxedsoln.gro -p topol.top -pname NA -nname CL -neutral -conc 0.15
   
   l=$(awk '/system/{print NR}' topol.top)
   line=$((l-1))
-  sed -i ''$line'i #include "toppar/NA.itp"' topol.top
+  sed -i ''$line'i #include "toppar/NA.itp"' topol.top 
   sed -i ''$line'i #include "toppar/CL.itp"' topol.top
   cp $source3/toppar/{CL.itp,NA.itp} $destination/toppar
   
