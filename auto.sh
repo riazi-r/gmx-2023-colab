@@ -5,7 +5,7 @@ for i in 1-1
 do
  
  modification=no
- if [[ "$modification" == "yes"]]
+ if [[ "$modification" == "yes" ]]
  then
  
   cd $pairs/$i
@@ -14,7 +14,7 @@ do
   vmd -e crdgenerator.tcl
   vmd -e xplorpsf.tcl
   line=$(head -1 solute.psf | awk '{print $NF}')
-   if [ line="CMAP" ]
+   if [[ line="CMAP" ]]
    then
     sed -i '1 s/PSF EXT CMAP/PSF EXT CMAP XPLOR/' solute.psf 
    fi
