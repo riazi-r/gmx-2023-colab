@@ -142,8 +142,8 @@ do
     rate_back=$(printf %.4f $(echo "$rate*-1" | bc -l))
     sed -i 's/pull_coord1_rate        =/pull_coord1_rate        = '$rate_back';/' $destination/${method}_back.mdp
 	
-	gmx grompp -f min.mdp -c boxedsoln.gro -p topol.top -r boxedsoln.gro -o min.tpr &&
-    gmx mdrun -deffnm min -update gpu &&
+    gmx grompp -f min.mdp -c boxedsoln.gro -p topol.top -r boxedsoln.gro -o min.tpr &&
+    gmx mdrun -deffnm min &&
     
     #gmx grompp -f nvt.mdp -c min.gro -p topol2.top -r min.gro -o nvt.tpr &&
     #gmx mdrun -deffnm nvt -update gpu -nb gpu -pme gpu && sleep 2 &&
