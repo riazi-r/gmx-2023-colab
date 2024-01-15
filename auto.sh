@@ -149,7 +149,7 @@ do
     cp $destination/$method.mdp $destination/${method}_back.mdp
     mv $destination/$method.mdp $destination/${method}_fwd.mdp
     dos2unix $destination/${method}_back.mdp
-    dos2unix $destination/${method}_forward.mdp
+    dos2unix $destination/${method}_fwd.mdp
     dt=$(awk '/dt/ {print $3}' ${method}_back.mdp)
     rate=$(awk '/pull_coord1_rate/ {print $3}' ${method}_back.mdp)
     initialdistance=$(awk '/COM distance:/ {print $3}' solute.info)
@@ -176,7 +176,7 @@ do
     
     for (( chain=1; chain<=$leftchain_No; chain+=1 ))
     do
-     segid=$(echo $leftproteins | awk '{print $chain}')
+     segid=$(echo $leftproteins | awk -v "c=$chain" '{print $c}')
      cp $destination/toppar/${segid}.itp $destination/toppar/${segid}_original.itp
      posres=$(awk '/ifdef POSRES_left/{print NR}' $destination/toppar/${segid}.itp)
      first=$(($posres+2))
@@ -233,7 +233,7 @@ do
 	#changing restrain type of left fragments from harmonic to flat-bottom for the main simulation
 	for (( chain=1; chain<=$leftchain_No; chain+=1 ))
     do
-     segid=$(echo $leftproteins | awk '{print $chain}')
+     segid=$(echo $leftproteins | awk -v "c=$chain" '{print $c}')
      cp $destination/toppar/${segid}.itp $destination/toppar/${segid}_original.itp
      posres=$(awk '/ifdef POSRES_left/{print NR}' $destination/toppar/${segid}.itp)
      first=$(($posres+2))
