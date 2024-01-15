@@ -4,7 +4,7 @@ define_left=$(awk '/set left/ {print $0}'  centerfinder.tcl)
   leftchain_No=$(echo $leftproteins | awk '{print NF}')  
   for (( chain=1; chain<=$leftchain_No; chain+=1 ))
   do
-   segid=$(echo $leftproteins | awk '{print $chain}')
+   segid=$(echo $leftproteins | awk -v "ch=$chain" '{print $ch}')
    cp $destination/toppar/${segid}.itp $destination/toppar/${segid}_original.itp
    sed -i 's/ifdef POSRES/ifdef POSRES_left/' $destination/toppar/${segid}.itp
    posres=$(awk '/ifdef POSRES_left/{print NR}' $destination/toppar/${segid}.itp)
