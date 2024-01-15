@@ -53,9 +53,9 @@ do
 	 x=$(awk '/box dimension without padding/ {print $6}' solute.info)
 	 y=$(awk '/box dimension without padding/ {print $8}' solute.info)
 	 z=$(awk '/box dimension without padding/ {print $10}' solute.info)
-	 marginx=0.11
-	 marginy=0.14
-	 marginz=0.15
+	 marginx=0.125
+	 marginy=0.16
+	 marginz=0.16
      xbox=$(printf %.1f $(echo "$marginx*$x" | bc -l));
 	 ybox=$(printf %.1f $(echo "$marginy*$y" | bc -l));
 	 zbox=$(printf %.1f $(echo "$marginz*$z" | bc -l));
@@ -196,7 +196,7 @@ do
       #next=$(($line+1))
       #sed -i ''$next'd' $destination/toppar/${segid}.itp
      done
-	 mv $destination/toppar/${segid}_${j}.itp  $destination/toppar/${segid}.itp
+	 mv $destination/toppar/${segid}_${i}.itp  $destination/toppar/${segid}.itp
     done	 
 	
     for i in {0..1}
@@ -253,7 +253,7 @@ do
       #next=$(($line+1))
       #sed -i ''$next'd' $destination/toppar/${segid}.itp
      done
-	 mv $destination/toppar/${segid}_${j}.itp  $destination/toppar/${segid}.itp
+	 mv $destination/toppar/${segid}_${i}.itp  $destination/toppar/${segid}.itp
     done	  
 	
     for i in {0..1}
