@@ -1,6 +1,6 @@
 pairs=`pwd`
 method=smd
-for i in 1-1 
+for i in 1-2 
 #1-2 1-3 1-4 2-2 2-3 2-4 3-3 3-4 4-4
 do
  
@@ -23,6 +23,9 @@ do
  
  #After submitting the prepared psf & crd files to Charmm-Gui FF convertor and downloading the topology & structure files:
  cd $pairs/$i/Run
+ tar zxvf *.tgz
+ rm -r *.tgz
+ mv ./*charmm-gui* ./charmm-gui
  mkdir $method.auto
  
   destination=$pairs/$i/Run/$method.auto
@@ -106,23 +109,38 @@ do
   
   # echo $l | gmx genrestr -f boxedsoln.gro -n index.ndx -o leftrest.itp
   
-  sed -i 's/ifdef POSRES/ifdef POSRES_left/' $destination/toppar/PROG.itp
-  sed -i 's/ifdef POSRES/ifdef POSRES_right/' $destination/toppar/PROM.itp
-  
   dos2unix solute.info
   dirx=$(awk '/direction vector/ {print $4}' solute.info)
   diry=$(awk '/direction vector/ {print $5}' solute.info)
   dirz=$(awk '/direction vector/ {print $6}' solute.info)
   
   sed -i 's/pull-coord1-vec          =/pull-coord1-vec          ='$dirx' '$diry' '$dirz'  ;/' $destination/$method.mdp
-  
-  
+   
   dos2unix solute.info
   atomindex1=$(awk '/centeratom_left/ {print $NF}' solute.info)
   atomindex2=$(awk '/centeratom_right/ {print $NF}' solute.info)
   sed -i 's/pull-group1-pbcatom     =/pull-group1-pbcatom     = '$atomindex1';/' $destination/$method.mdp
   sed -i 's/pull-group2-pbcatom     =/pull-group2-pbcatom     = '$atomindex2';/' $destination/$method.mdp
   
+  #changing position restrain name of the left fragments
+  define_left=$(awk '/set left/ {print $0}'  centerfinder.tcl)
+  leftproteins=$(echo $define_left | grep -o -P '(?<=segid).*?(?=serial)'|tr -d 'to','or')
+  leftchain_No=$(echo $leftproteins | awk '{print NF}')  
+  for (( chain=1; chain<=$leftchain_No; chain+=1 ))
+  do
+   segid=$(echo $leftproteins | awk -v "c=$chain" '{print $c}')
+   sed -i 's/ifdef POSRES/ifdef POSRES_left/' $destination/toppar/${segid}.itp
+  done
+  
+  #changing position restrain name of the right fragments
+  define_right=$(awk '/set right/ {print $0}'  centerfinder.tcl)
+  rightproteins=$(echo $define_right | grep -o -P '(?<=segid).*?(?=serial)'|tr -d 'to','or')
+  rightchain_No=$(echo $rightproteins | awk '{print NF}')  
+  for (( chain=1; chain<=$rightchain_No; chain+=1 ))
+  do
+   segid=$(echo $rightproteins | awk -v "c=$chain" '{print $c}')
+   sed -i 's/ifdef POSRES/ifdef POSRES_right/' $destination/toppar/${segid}.itp
+  done
   
     #fwd and back smd mdp settings (for smd only):
 	
@@ -138,11 +156,12 @@ do
     nearestdistance=20
     traverse=$(printf %.1f $(echo "($initialdistance-$nearestdistance)/10" | bc -l))
     steps=$(printf %.0f $(echo "($traverse/$rate)/$dt" | bc -l))
+   
     sed -i 's/nsteps      =/nsteps      = '$steps';/' $destination/${method}_back.mdp
     rate_back=$(printf %.4f $(echo "$rate*-1" | bc -l))
     sed -i 's/pull_coord1_rate        =/pull_coord1_rate        = '$rate_back';/' $destination/${method}_back.mdp
 	
-    gmx grompp -f min.mdp -c boxedsoln.gro -p topol.top -r boxedsoln.gro -o min.tpr &&
+	gmx grompp -f min.mdp -c boxedsoln.gro -p topol.top -r boxedsoln.gro -o min.tpr &&
     gmx mdrun -deffnm min &&
     
     #gmx grompp -f nvt.mdp -c min.gro -p topol2.top -r min.gro -o nvt.tpr &&
@@ -153,7 +172,34 @@ do
     
     echo 0 | gmx trjconv -s npt.tpr -f npt.xtc -o npt.gro -sep -skip 5
     
-    for i in {0..3}
+	#changing restrain type of left fragments from harmonic to flat-bottom for the main simulation
+    
+    for (( chain=1; chain<=$leftchain_No; chain+=1 ))
+    do
+     segid=$(echo $leftproteins | awk '{print $chain}')
+     cp $destination/toppar/${segid}.itp $destination/toppar/${segid}_original.itp
+     posres=$(awk '/ifdef POSRES_left/{print NR}' $destination/toppar/${segid}.itp)
+     first=$(($posres+2))
+     last=$(awk '$0~"POSRES_FC"{n=NR}END{print n}' $destination/toppar/${segid}.itp)
+     i=0
+     j=1
+     mv $destination/toppar/${segid}.itp  $destination/toppar/${segid}_${i}.itp
+     for (( line=$first; line<=$last; line+=1 ))
+     do
+      atom=$(awk -v "a=$line" 'NR==a {print $1}' $destination/toppar/${segid}_${i}.itp)
+      k=$(awk -v "a=$line" 'NR==a {print $3}' $destination/toppar/${segid}_${i}.itp)
+	  awk -v "a=$line" 'NR==a { print "'$atom'     2    1    1    '$k'" ; next } 1' $destination/toppar/${segid}_${i}.itp > $destination/toppar/${segid}_${j}.itp
+	  rm  $destination/toppar/${segid}_${i}.itp
+	  ((i++))
+	  ((j++))
+      #sed -i ''$line'i '$atom'     2    1    1    '$k'' $destination/toppar/${segid}.itp
+      #next=$(($line+1))
+      #sed -i ''$next'd' $destination/toppar/${segid}.itp
+     done
+	 mv $destination/toppar/${segid}_${j}.itp  $destination/toppar/${segid}.itp
+    done	 
+	
+    for i in {0..1}
     do
      
 	 gmx grompp -f ${method}_fwd.mdp -c npt$i.gro -p topol.top -r npt$i.gro -n ${method}.ndx -o ${method}_fwd$i.tpr
@@ -184,9 +230,35 @@ do
     
     echo 0 | gmx trjconv -s npt.tpr -f npt.xtc -o npt.gro -sep -skip 5
     
-    for i in {0..3}
+	#changing restrain type of left fragments from harmonic to flat-bottom for the main simulation
+	for (( chain=1; chain<=$leftchain_No; chain+=1 ))
     do
+     segid=$(echo $leftproteins | awk '{print $chain}')
+     cp $destination/toppar/${segid}.itp $destination/toppar/${segid}_original.itp
+     posres=$(awk '/ifdef POSRES_left/{print NR}' $destination/toppar/${segid}.itp)
+     first=$(($posres+2))
+     last=$(awk '$0~"POSRES_FC"{n=NR}END{print n}' $destination/toppar/${segid}.itp)
+     i=0
+     j=1
+     mv $destination/toppar/${segid}.itp  $destination/toppar/${segid}_${i}.itp
+     for (( line=$first; line<=$last; line+=1 ))
+     do
+      atom=$(awk -v "a=$line" 'NR==a {print $1}' $destination/toppar/${segid}_${i}.itp)
+      k=$(awk -v "a=$line" 'NR==a {print $3}' $destination/toppar/${segid}_${i}.itp)
+	  awk -v "a=$line" 'NR==a { print "'$atom'     2    1    1    '$k'" ; next } 1' $destination/toppar/${segid}_${i}.itp > $destination/toppar/${segid}_${j}.itp
+	  rm  $destination/toppar/${segid}_${i}.itp
+	  ((i++))
+	  ((j++))
+      #sed -i ''$line'i '$atom'     2    1    1    '$k'' $destination/toppar/${segid}.itp
+      #next=$(($line+1))
+      #sed -i ''$next'd' $destination/toppar/${segid}.itp
+     done
+	 mv $destination/toppar/${segid}_${j}.itp  $destination/toppar/${segid}.itp
+    done	  
 	
+    for i in {0..1}
+    do
+	 
      gmx grompp -f ${method}.mdp -c npt$i.gro -p topol.top -r npt$i.gro -n ${method}.ndx -o ${method}$i.tpr
      echo $i    
      gmx mdrun -deffnm ${method}$i -pf pullf$i.xvg -px pullx$i.xvg -cpi ${method}$i.cpt -update gpu
