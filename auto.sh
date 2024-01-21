@@ -129,6 +129,8 @@ do
   cat list.txt | gmx make_ndx -f boxedsoln.gro -o ${method}
   
   # echo $l | gmx genrestr -f boxedsoln.gro -n index.ndx -o leftrest.itp
+
+  #setting direction of pulling based on com of fragments in boxed solute:
   molecule=boxed
   export molecule
   vmd -e centerfinder.tcl
