@@ -1,10 +1,12 @@
 pairs=`pwd`
 method=smd
-for i in 1-2 
+for i in 1-4 
 #1-2 1-3 1-4 2-2 2-3 2-4 3-3 3-4 4-4
 do
  
  modification=no
+ closer=yes
+ 
  if [[ "$modification" == "yes" ]]
  then
  
@@ -17,22 +19,35 @@ do
    if [[ line="CMAP" ]]
    then
     sed -i '1 s/PSF EXT CMAP/PSF EXT CMAP XPLOR/' solute.psf 
-   fi
+   fi   #after finishing the crd and psf files shalll be submited to charmm-gui FF convertor to produce gromacs input files including .gro & .topo files
    
   fi 
- 
- #After submitting the prepared psf & crd files to Charmm-Gui FF convertor and downloading the topology & structure files:
- cd $pairs/$i/Run
- tar zxvf *.tgz
- rm -r *.tgz
- mv ./*charmm-gui* ./charmm-gui
- mkdir $method.auto
- 
+  
+  #After submitting the prepared psf & crd files to Charmm-Gui FF convertor and downloading the topology & structure files:
+  cd $pairs/$i/Run
+  tar zxvf *.tgz
+  rm -r *.tgz
+  mv ./*charmm-gui* ./charmm-gui
+  mkdir $method.auto
+  
   destination=$pairs/$i/Run/$method.auto
   source1=$pairs/$i/Run/charmm-gui/gromacs
   source2=$pairs/$i/Run
   source3=$pairs/source  
   
+  if [[ "$closer" == "yes" ]]  #brings 2 fragments closer to reduce number of water molecules in the box. the maximum distance will be asked as bash window input
+  then
+  
+   cp $source3/merge.tcl $source1
+   cd $source1
+   echo "please type the maximum distance between fragments in the simulation to calculate the box size:"
+   read var
+   export var
+   vmd -e merge.tcl
+     
+  fi 
+  
+ 
   cp $source1/{step3_input.gro,step3_input.pdb,step3_input.psf} $destination
   mv $destination/step3_input.psf $destination/solute.psf 
   mv $destination/step3_input.pdb $destination/solute.pdb
@@ -53,16 +68,21 @@ do
 	 x=$(awk '/box dimension without padding/ {print $6}' solute.info)
 	 y=$(awk '/box dimension without padding/ {print $8}' solute.info)
 	 z=$(awk '/box dimension without padding/ {print $10}' solute.info)
-	 marginx=0.125
-	 marginy=0.16
-	 marginz=0.16
+	 echo "give x margin for box dimension:"
+	 read marginx ##0.135
+	 echo "give y margin for box dimension:"
+	 read marginy ##0.17
+	 echo "give z margin for box dimension:"
+	 read marginz ## 0.105
      xbox=$(printf %.1f $(echo "$marginx*$x" | bc -l));
 	 ybox=$(printf %.1f $(echo "$marginy*$y" | bc -l));
 	 zbox=$(printf %.1f $(echo "$marginz*$z" | bc -l));
   fi 
   
-  gmx editconf -f solute-rotate.gro -o boxed.gro -box ${xbox} ${ybox} ${zbox}
-  
+  #gmx editconf -f solute-rotate.gro -o boxed.gro -box ${xbox} ${ybox} ${zbox} -center 
+    
+  gmx editconf -f solute.gro -o boxed.gro -c -d 2.5 -bt triclinic   #lets gromacs automatically allign the molecules to find the minimum box size
+  vmd -e centerfinder.tcl
   gmx solvate -cp boxed.gro -cs spc216.gro -o boxedsol.gro -p topol.top
  
   sed -i 's/Title/'$i'/' $destination/topol.top 
