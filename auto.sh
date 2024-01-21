@@ -59,6 +59,8 @@ do
  
  cd $destination
  
+ molecule=solute
+ export molecule
  vmd -e centerfinder.tcl
  dos2unix solute.info
   if [ $(grep -c "box dimension without padding" solute.info) -gt 0 ]
@@ -82,7 +84,6 @@ do
   #gmx editconf -f solute-rotate.gro -o boxed.gro -box ${xbox} ${ybox} ${zbox} -center 
     
   gmx editconf -f solute.gro -o boxed.gro -c -d 2.5 -bt triclinic   #lets gromacs automatically allign the molecules to find the minimum box size
-  vmd -e centerfinder.tcl
   gmx solvate -cp boxed.gro -cs spc216.gro -o boxedsol.gro -p topol.top
  
   sed -i 's/Title/'$i'/' $destination/topol.top 
@@ -128,7 +129,9 @@ do
   cat list.txt | gmx make_ndx -f boxedsoln.gro -o ${method}
   
   # echo $l | gmx genrestr -f boxedsoln.gro -n index.ndx -o leftrest.itp
-  
+  molecule=boxed
+  export molecule
+  vmd -e centerfinder.tcl
   dos2unix solute.info
   dirx=$(awk '/direction vector/ {print $4}' solute.info)
   diry=$(awk '/direction vector/ {print $5}' solute.info)
