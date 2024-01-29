@@ -7,7 +7,7 @@ do
  modification=no
  boxsize=by-padding #other option: by-size
  
- if [[ "$i" == "1-4" || "$i" == "4-4" || "$i" == "3-4" || "$i" == "2-4" ]]
+ if [[ "$i" == "1-4" || "$i" == "4-4" || "$i" == "3-4" || "$i" == "2-4" ]]  #to reduce the initial distance of 2 fragments
  then 
   closer=yes
  else
@@ -47,8 +47,15 @@ do
   
    cp $source3/merge.tcl $source1
    cd $source1
-   echo "please type the maximum distance in angestrom(A) between fragments in the simulation to calculate the box size:"
-   read var
+   left_selection=$(awk '/set left/ {print $0}' $source2/centerfinder.tcl)
+   right_selection=$(awk '/set right/ {print $0}' $source2/centerfinder.tcl)
+   line_leftselection=$(awk '/set left/{print NR}' merge.tcl)
+   line_rightselection=$(awk '/set right/{print NR}' merge.tcl)
+   awk -v "lineleft=$line_leftselection" -v "left_selection=$left_selection" 'NR == lineleft {$0 = left_selection} {print}' merge.tcl > temp.tcl && mv temp.tcl merge.tcl &&
+   awk -v "lineright=$line_rightselection" -v "right_selection=$right_selection" 'NR == lineright {$0 = right_selection} {print}' merge.tcl > temp.tcl && mv temp.tcl merge.tcl 
+   #echo "please type the maximum distance in angestrom(A) between fragments in the simulation to calculate the box size:"
+   #read var
+   var=140 #angestrom
    export var
    vmd -e merge.tcl
      
@@ -84,7 +91,7 @@ do
 	 read marginy ##0.17
 	 echo "give z margin for box dimension:"
 	 read marginz ## 0.105
-         xbox=$(printf %.1f $(echo "$marginx*$x" | bc -l));
+     xbox=$(printf %.1f $(echo "$marginx*$x" | bc -l));
 	 ybox=$(printf %.1f $(echo "$marginy*$y" | bc -l));
 	 zbox=$(printf %.1f $(echo "$marginz*$z" | bc -l));
 	 gmx editconf -f solute-rotate.gro -o boxed.gro -box ${xbox} ${ybox} ${zbox} -center
