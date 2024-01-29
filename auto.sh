@@ -1,11 +1,18 @@
 pairs=`pwd`
 method=smd
-for i in 1-4 
+for i in  2-4 4-4 2-3 3-4                               
 #1-2 1-3 1-4 2-2 2-3 2-4 3-3 3-4 4-4
 do
  
  modification=no
- closer=yes
+ boxsize=by-padding #other option: by-size
+ 
+ if [[ "$i" == "1-4" || "$i" == "4-4" || "$i" == "3-4" || "$i" == "2-4" ]]
+ then 
+  closer=yes
+ else
+  closer=no
+ fi
  
  if [[ "$modification" == "yes" ]]
  then
@@ -40,7 +47,7 @@ do
   
    cp $source3/merge.tcl $source1
    cd $source1
-   echo "please type the maximum distance between fragments in the simulation to calculate the box size:"
+   echo "please type the maximum distance in angestrom(A) between fragments in the simulation to calculate the box size:"
    read var
    export var
    vmd -e merge.tcl
@@ -63,7 +70,8 @@ do
  export molecule
  vmd -e centerfinder.tcl
  dos2unix solute.info
-  if [ $(grep -c "box dimension without padding" solute.info) -gt 0 ]
+  
+  if [ "$boxsize" == "by-size" ]
   then
      #n=$(grep -n "box dimension without padding" solute.info)
 	 dos2unix solute.info
@@ -76,14 +84,19 @@ do
 	 read marginy ##0.17
 	 echo "give z margin for box dimension:"
 	 read marginz ## 0.105
-     xbox=$(printf %.1f $(echo "$marginx*$x" | bc -l));
+         xbox=$(printf %.1f $(echo "$marginx*$x" | bc -l));
 	 ybox=$(printf %.1f $(echo "$marginy*$y" | bc -l));
 	 zbox=$(printf %.1f $(echo "$marginz*$z" | bc -l));
+	 gmx editconf -f solute-rotate.gro -o boxed.gro -box ${xbox} ${ybox} ${zbox} -center
+	 
+  elif [ "$boxsize" == "by-padding" ]
+  then
+  	gmx editconf -f solute.gro -o boxed.gro -c -d 3 -bt triclinic   #lets gromacs automatically allign the molecules to find the minimum box size 
+  
   fi 
   
-  #gmx editconf -f solute-rotate.gro -o boxed.gro -box ${xbox} ${ybox} ${zbox} -center 
+   
     
-  gmx editconf -f solute.gro -o boxed.gro -c -d 2.5 -bt triclinic   #lets gromacs automatically allign the molecules to find the minimum box size
   gmx solvate -cp boxed.gro -cs spc216.gro -o boxedsol.gro -p topol.top
  
   sed -i 's/Title/'$i'/' $destination/topol.top 
@@ -129,7 +142,7 @@ do
   cat list.txt | gmx make_ndx -f boxedsoln.gro -o ${method}
   
   # echo $l | gmx genrestr -f boxedsoln.gro -n index.ndx -o leftrest.itp
-
+  
   #setting direction of pulling based on com of fragments in boxed solute:
   molecule=boxed
   export molecule
