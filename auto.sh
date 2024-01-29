@@ -91,7 +91,7 @@ do
 	 read marginy ##0.17
 	 echo "give z margin for box dimension:"
 	 read marginz ## 0.105
-     xbox=$(printf %.1f $(echo "$marginx*$x" | bc -l));
+         xbox=$(printf %.1f $(echo "$marginx*$x" | bc -l));
 	 ybox=$(printf %.1f $(echo "$marginy*$y" | bc -l));
 	 zbox=$(printf %.1f $(echo "$marginz*$z" | bc -l));
 	 gmx editconf -f solute-rotate.gro -o boxed.gro -box ${xbox} ${ybox} ${zbox} -center
