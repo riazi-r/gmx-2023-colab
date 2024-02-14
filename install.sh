@@ -7,3 +7,6 @@ make -j 10 &&
 make check &&
 sudo make install &&
 source /usr/local/gromacs2022/bin/GMXRC
+
+#-DGMX_CUDA_TARGET_SM=90
+#-DBUILD_SHARED_LIBS=ON
